@@ -2,10 +2,19 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import SQLALCHEMY_DATABASE_URL
 
-# SQLite Engine with check_same_thread=False for FastAPI concurrency
+# Engine configuration: SQLite needs check_same_thread=False; PostgreSQL uses connection pooling
+is_sqlite = SQLALCHEMY_DATABASE_URL.startswith("sqlite")
+engine_kwargs = {}
+if is_sqlite:
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 20
+    engine_kwargs["pool_pre_ping"] = True
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    **engine_kwargs
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -194,3 +203,51 @@ def init_and_migrate_db():
 
         conn.commit()
 
+    # Seed initial platform users and genesis log if database is freshly created
+    seed_initial_users()
+
+
+def seed_initial_users():
+    """Seeds default platform users if User table is empty."""
+    from app.models import User, AuditLog
+    from app.core.security import get_password_hash
+
+    db = SessionLocal()
+    try:
+        if db.query(User).count() == 0:
+            admin_user = User(
+                full_name="Platform Super Admin",
+                email="admin@qshield.com",
+                password_hash=get_password_hash("Admin@123"),
+                role="SUPER_ADMIN",
+                status="ACTIVE"
+            )
+            analyst_user = User(
+                full_name="Security Analyst",
+                email="analyst@qshield.com",
+                password_hash=get_password_hash("Analyst@123"),
+                role="SECURITY_ANALYST",
+                status="ACTIVE"
+            )
+            sig_user = User(
+                full_name="Digital Signature User",
+                email="user@qshield.com",
+                password_hash=get_password_hash("User@123"),
+                role="DIGITAL_SIGNATURE_USER",
+                status="ACTIVE"
+            )
+            db.add_all([admin_user, analyst_user, sig_user])
+            db.commit()
+
+        if db.query(AuditLog).count() == 0:
+            log = AuditLog(
+                user_email="admin@qshield.com",
+                action="SYSTEM_INIT",
+                details="Q-SHIELD Security Platform database initialized successfully."
+            )
+            db.add(log)
+            db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()

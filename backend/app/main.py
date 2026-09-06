@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.db import engine, Base, init_and_migrate_db
@@ -12,10 +13,25 @@ app = FastAPI(
     version="3.0.0"
 )
 
-# Enable CORS for localhost frontend access
+# Dynamic CORS Configuration for Local Development and Production (Vercel / Render)
+raw_cors = os.getenv("CORS_ORIGINS", "").strip()
+if raw_cors:
+    allowed_origins = [origin.strip() for origin in raw_cors.split(",") if origin.strip()]
+else:
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ]
+
+# Vercel preview environments support regex (e.g. https://<project-name>-<hash>.vercel.app)
+cors_regex = os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=cors_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,11 +53,12 @@ app.include_router(dashboard.router, prefix="/api")
 
 @app.get("/")
 def root():
+    env_mode = os.getenv("ENVIRONMENT", "production" if os.getenv("RENDER") else "development")
     return {
         "status": "online",
         "platform": "Q-SHIELD Security Platform",
         "version": "3.0.0",
-        "mode": "localhost"
+        "mode": env_mode
     }
 
 @app.get("/api/health")

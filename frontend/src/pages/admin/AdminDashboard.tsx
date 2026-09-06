@@ -98,7 +98,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
           <div>
             <h3 className="text-lg font-bold text-cyber-primary">Q-SHIELD Core Services Status</h3>
-            <p className="text-xs text-cyber-secondary mt-0.5">Database SQLite connected. FastAPI Backend online on localhost:8000.</p>
+            <p className="text-xs text-cyber-secondary mt-0.5">Database storage connected. FastAPI Backend online and operational.</p>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">

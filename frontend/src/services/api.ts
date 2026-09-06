@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api';
+// Resolve API base URL:
+// In production (Vercel): uses VITE_API_URL (e.g. "https://qshield-backend.onrender.com")
+// In local development: defaults to '/api' using Vite dev server proxy to localhost:8000
+const rawBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').trim();
+
+const getApiBaseUrl = (url?: string): string => {
+  if (!url) return '/api';
+  const clean = url.replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+};
+
+export const API_BASE_URL = getApiBaseUrl(rawBaseUrl);
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

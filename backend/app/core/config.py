@@ -5,23 +5,33 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 PROJECT_ROOT = BASE_DIR
 
-# Database URL (SQLite)
-DATABASE_DIR = PROJECT_ROOT / "database"
-DATABASE_DIR.mkdir(exist_ok=True)
-DATABASE_PATH = DATABASE_DIR / "qshield.db"
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
+# Database URL (Dynamic PostgreSQL / SQLite Support)
+raw_db_url = os.getenv("DATABASE_URL", "").strip()
+if raw_db_url:
+    # Render and Heroku provide postgres:// which SQLAlchemy 2.0 requires as postgresql://
+    if raw_db_url.startswith("postgres://"):
+        raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URL = raw_db_url
+else:
+    DATABASE_DIR = PROJECT_ROOT / "database"
+    DATABASE_DIR.mkdir(exist_ok=True)
+    DATABASE_PATH = DATABASE_DIR / "qshield.db"
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
 
 # JWT Security Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "qshield_secret_key_quantum_inspired_cybersecurity_2026_super_secure")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
 
-# Storage Directories (Legacy uploads and structured media)
-UPLOADS_DIR = PROJECT_ROOT / "uploads"
+# Storage Directories (Configurable for persistent disk or local fallback)
+custom_uploads = os.getenv("UPLOADS_DIR") or os.getenv("MEDIA_ROOT")
+UPLOADS_DIR = Path(custom_uploads) if custom_uploads else PROJECT_ROOT / "uploads"
 UPLOADS_ORIGINAL = UPLOADS_DIR / "original"
 UPLOADS_SIGNED = UPLOADS_DIR / "signed"
 UPLOADS_ANALYSIS = UPLOADS_DIR / "analysis"
-REPORTS_DIR = PROJECT_ROOT / "reports"
+
+custom_reports = os.getenv("REPORTS_DIR")
+REPORTS_DIR = Path(custom_reports) if custom_reports else PROJECT_ROOT / "reports"
 
 # Organized Media Storage Hierarchy
 MEDIA_DIR = PROJECT_ROOT / "media"
