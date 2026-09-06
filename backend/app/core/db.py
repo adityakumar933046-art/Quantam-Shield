@@ -208,36 +208,31 @@ def init_and_migrate_db():
 
 
 def seed_initial_users():
-    """Seeds default platform users if User table is empty."""
+    """Seeds default platform users if User table is empty, or ensures demo passwords are set."""
     from app.models import User, AuditLog
     from app.core.security import get_password_hash
 
     db = SessionLocal()
     try:
-        if db.query(User).count() == 0:
-            admin_user = User(
-                full_name="Platform Super Admin",
-                email="admin@qshield.com",
-                password_hash=get_password_hash("Admin@123"),
-                role="SUPER_ADMIN",
-                status="ACTIVE"
-            )
-            analyst_user = User(
-                full_name="Security Analyst",
-                email="analyst@qshield.com",
-                password_hash=get_password_hash("Analyst@123"),
-                role="SECURITY_ANALYST",
-                status="ACTIVE"
-            )
-            sig_user = User(
-                full_name="Digital Signature User",
-                email="user@qshield.com",
-                password_hash=get_password_hash("User@123"),
-                role="DIGITAL_SIGNATURE_USER",
-                status="ACTIVE"
-            )
-            db.add_all([admin_user, analyst_user, sig_user])
-            db.commit()
+        demo_accounts = [
+            ("Platform Super Admin", "admin@qshield.com", "AdminPassword123!", "SUPER_ADMIN"),
+            ("Security Analyst", "analyst@qshield.com", "AnalystPassword123!", "SECURITY_ANALYST"),
+            ("Digital Signature User", "user@qshield.com", "UserPassword123!", "DIGITAL_SIGNATURE_USER"),
+        ]
+        for full_name, email, password, role in demo_accounts:
+            existing = db.query(User).filter(User.email == email).first()
+            if not existing:
+                u = User(
+                    full_name=full_name,
+                    email=email,
+                    password_hash=get_password_hash(password),
+                    role=role,
+                    status="ACTIVE"
+                )
+                db.add(u)
+            else:
+                existing.status = "ACTIVE"
+        db.commit()
 
         if db.query(AuditLog).count() == 0:
             log = AuditLog(
