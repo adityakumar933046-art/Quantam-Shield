@@ -78,8 +78,8 @@ def generate_report(
         risk_score = data.get("risk_assessment", {}).get("final_risk_score", 0.0)
         risk_level = data.get("risk_assessment", {}).get("risk_level", "LOW")
         doc_name = doc.file_name
-        doc_hash = doc.canonical_hash
-        sig_id = doc.signature_id
+        doc_hash = doc.document_hash or doc.canonical_hash
+        sig_id = doc.signature_id or (doc.extracted_metadata.signature_fingerprint[:16] if doc.extracted_metadata and doc.extracted_metadata.signature_fingerprint and doc.extracted_metadata.signature_fingerprint != "Not Available" else f"SIG-{doc.analysis_document_id:04d}")
         sim_id = None
         analysis_id = doc.analysis_document_id
 

@@ -132,6 +132,7 @@ async def upload_and_analyze_document(
         raw_text_content=raw_text,
         file_size=len(content),
         document_hash=doc_hash,
+        canonical_hash=doc_hash,
         signature_present=sig_detected,
         signature_status=sig_status
     )
@@ -161,6 +162,9 @@ async def upload_and_analyze_document(
         signer_organization=extraction_res.get("signer_organization", "Not Available")
     )
     db.add(extracted_meta)
+
+    sig_fp = extraction_res.get("signature_fingerprint")
+    analyzed_doc.signature_id = (sig_fp[:16] if sig_fp and sig_fp != "Not Available" else f"SIG-{analyzed_doc.analysis_document_id:04d}") if sig_detected else None
     db.commit()
     db.refresh(analyzed_doc)
 

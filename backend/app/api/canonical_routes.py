@@ -471,6 +471,7 @@ def upload_document_for_analysis(
         file_type="PDF" if fmt == ContentType.PDF else ("JSON" if fmt == ContentType.JSON else "TXT"),
         file_size=len(content_bytes),
         document_hash=current_hash,
+        canonical_hash=current_hash,
         signature_present=sig_detected,
         signature_status=sig_status,
         signature_verified=False,
@@ -502,6 +503,8 @@ def upload_document_for_analysis(
         signer_organization=extraction.get("signer_organization", "Not Available")
     )
     db.add(db_meta)
+    sig_fp = extraction.get("signature_fingerprint")
+    analyzed_doc.signature_id = (sig_fp[:16] if sig_fp and sig_fp != "Not Available" else f"SIG-{analyzed_doc.analysis_document_id:04d}") if sig_detected else None
     db.commit()
 
     return CanonicalAnalysisResponse(
