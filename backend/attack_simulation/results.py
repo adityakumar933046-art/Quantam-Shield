@@ -15,7 +15,7 @@ def calculate_simulation_metrics(results: List[Dict[str, Any]]) -> Dict[str, Any
         return {
             "total_simulations": 0,
             "threats_correctly_detected": 0,
-            "detection_rate": 100.0,
+            "detection_rate": 0.0,
             "missed_simulations": 0,
             "average_detection_time_ms": 0.0,
             "average_risk_score": 0.0,

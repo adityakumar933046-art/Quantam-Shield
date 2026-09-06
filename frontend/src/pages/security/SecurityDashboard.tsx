@@ -193,7 +193,7 @@ export const SecurityDashboard: React.FC = () => {
           <div className="p-3.5 bg-navy-light/40 rounded-xl border border-navy-light/60">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg State Consistency</p>
             <p className="text-xl font-mono font-bold text-cyan mt-1">
-              {typeof quantumMetrics?.average_state_consistency === 'number' ? Number(quantumMetrics.average_state_consistency).toFixed(1) : '100.0'}%
+              {typeof quantumMetrics?.average_state_consistency === 'number' ? Number(quantumMetrics.average_state_consistency).toFixed(1) : '0.0'}%
             </p>
           </div>
           <div className="p-3.5 bg-navy-light/40 rounded-xl border border-navy-light/60">

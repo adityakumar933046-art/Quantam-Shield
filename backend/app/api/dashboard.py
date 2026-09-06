@@ -208,7 +208,7 @@ def get_dashboard_quantum_analysis(
 
     if count == 0:
         return DashboardQuantumAnalysisResponse(
-            average_state_consistency=100.0,
+            average_state_consistency=0.0,
             average_state_disturbance=0.0,
             average_threat_probability=0.0,
             average_pauli_disturbance=0.0,

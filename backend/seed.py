@@ -49,48 +49,7 @@ def seed_database():
         else:
             print(f"Database already contains {user_count} users.")
 
-        # Seed initial documents and incidents if empty
-        if db.query(SignedDocument).count() == 0:
-            sig_user = db.query(User).filter(User.role == "DIGITAL_SIGNATURE_USER").first()
-            if sig_user:
-                doc1 = SignedDocument(
-                    user_id=sig_user.user_id,
-                    original_filename="Contract_v1.pdf",
-                    signed_filename="Contract_v1_signed.pdf",
-                    file_hash="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                    signature_algorithm="RSA-SHA256",
-                    status="SIGNED"
-                )
-                db.add(doc1)
-                db.commit()
-                print("Seeded initial signed document.")
-
-        if db.query(SecurityIncident).count() == 0:
-            analyst = db.query(User).filter(User.role == "SECURITY_ANALYST").first()
-            if analyst:
-                inc1 = SecurityIncident(
-                    analyst_id=analyst.user_id,
-                    document_name="Financial_Report_2026_signed.pdf",
-                    signature_validity="VALID",
-                    integrity_status="VERIFIED",
-                    threat_level="LOW",
-                    risk_score=12.5,
-                    details="Classical RSA-2048 signature valid. No anomaly detected."
-                )
-                inc2 = SecurityIncident(
-                    analyst_id=analyst.user_id,
-                    document_name="Modified_Agreement_signed.pdf",
-                    signature_validity="INVALID",
-                    integrity_status="TAMPERED",
-                    threat_level="HIGH",
-                    risk_score=87.3,
-                    details="Signature manipulation detected. Byte offset mismatch."
-                )
-                db.add_all([inc1, inc2])
-                db.commit()
-                print("Seeded initial security incidents.")
-
-        # Initial audit log
+        # Ensure clean audit log genesis if empty
         if db.query(AuditLog).count() == 0:
             log = AuditLog(
                 user_email="admin@qshield.com",
@@ -100,7 +59,7 @@ def seed_database():
             db.add(log)
             db.commit()
 
-        print("Database seed complete successfully!")
+        print("Database authentication setup complete successfully!")
     finally:
         db.close()
 

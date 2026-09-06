@@ -249,12 +249,12 @@ def get_qds_performance_metrics(
     total_attacks = len(attacks)
     threats_count = len(threats)
 
-    avg_fidelity = 1.0
+    avg_fidelity = 0.0
     if total_sims > 0:
         avg_fidelity = sum(s.fidelity for s in simulations) / total_sims
 
-    avg_exec_ms = 12.5
-    avg_detection_accuracy = 100.0
+    avg_exec_ms = 0.0
+    avg_detection_accuracy = 0.0
     avg_far = 0.0
     avg_frr = 0.0
 

@@ -1023,8 +1023,9 @@ export const AttackSimulationPage: React.FC = () => {
                 ))}
                 {history.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-slate-400">
-                      No simulation records found. Run a simulation from the lab.
+                    <td colSpan={7} className="text-center py-12 text-slate-400">
+                      <p className="font-semibold text-slate-600 text-sm">No simulation results available</p>
+                      <p className="text-xs text-slate-400 mt-1">Execute a controlled attack simulation above to inspect detection results.</p>
                     </td>
                   </tr>
                 )}

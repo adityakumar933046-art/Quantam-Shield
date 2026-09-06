@@ -178,8 +178,8 @@ export const ReportsPage: React.FC = () => {
         ) : reports.length === 0 ? (
           <div className="p-12 text-center text-cyber-secondary space-y-3">
             <FileText size={40} className="mx-auto text-slate-300" />
-            <p className="font-semibold text-slate-600">No reports found for the selected category.</p>
-            <p className="text-xs text-slate-400">Generate a report above or run document analyses/simulations.</p>
+            <p className="font-semibold text-slate-600">No reports available</p>
+            <p className="text-xs text-slate-400">Generate a report above or conduct document security analysis.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -222,7 +222,7 @@ export const ReportsPage: React.FC = () => {
                     </td>
                     <td className="py-4 px-6">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getRiskBadge(rpt.risk_level)}`}>
-                        {rpt.risk_score.toFixed(1)}/100 ({rpt.risk_level})
+                        {Number(rpt?.risk_score ?? 0).toFixed(1)}/100 ({rpt.risk_level})
                       </span>
                     </td>
                     <td className="py-4 px-6 text-xs text-cyber-secondary truncate max-w-[140px]">

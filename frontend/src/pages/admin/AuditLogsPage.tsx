@@ -159,45 +159,55 @@ export const AuditLogsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-cyber-border text-sm">
-                {logs.map((log) => (
-                  <tr key={log.log_id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-4 px-6 font-mono text-xs text-cyber-secondary">
-                      {log.event_id || `#${log.log_id}`}
-                    </td>
-                    <td className="py-4 px-6 font-semibold text-cyber-primary text-xs">
-                      {log.user_email}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-navy text-cyan border border-cyan/20">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
-                        log.result === 'SUCCESS' || log.result === 'AUDIT_LOG_VALID'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : (log.result === 'FAILED' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')
-                      }`}>
-                        {log.result}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-cyber-secondary text-xs max-w-xs truncate">
-                      {log.details}
-                    </td>
-                    <td className="py-4 px-6 font-mono text-[11px] text-slate-500">
-                      {log.current_log_hash ? (
-                        <span title={`Current Hash: ${log.current_log_hash}\nPrev Hash: ${log.previous_log_hash}`}>
-                          {log.current_log_hash.substring(0, 12)}...
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">LEGACY</span>
-                      )}
-                    </td>
-                    <td className="py-4 px-6 text-cyber-secondary text-xs">
-                      {new Date(log.created_at).toLocaleString()}
+                {logs.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-12 text-center text-cyber-secondary">
+                      <Clock size={36} className="mx-auto text-slate-300 mb-2" />
+                      <p className="font-semibold text-slate-600">No audit activity available</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Audit log records will be appended sequentially as operations occur.</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  logs.map((log) => (
+                    <tr key={log.log_id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-4 px-6 font-mono text-xs text-cyber-secondary">
+                        {log.event_id || `#${log.log_id}`}
+                      </td>
+                      <td className="py-4 px-6 font-semibold text-cyber-primary text-xs">
+                        {log.user_email}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-navy text-cyan border border-cyan/20">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                          log.result === 'SUCCESS' || log.result === 'AUDIT_LOG_VALID'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : (log.result === 'FAILED' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')
+                        }`}>
+                          {log.result}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-cyber-secondary text-xs max-w-xs truncate">
+                        {log.details}
+                      </td>
+                      <td className="py-4 px-6 font-mono text-[11px] text-slate-500">
+                        {log.current_log_hash ? (
+                          <span title={`Current Hash: ${log.current_log_hash}\nPrev Hash: ${log.previous_log_hash}`}>
+                            {log.current_log_hash.substring(0, 12)}...
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">LEGACY</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-cyber-secondary text-xs">
+                        {new Date(log.created_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
