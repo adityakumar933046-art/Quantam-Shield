@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: qshield-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=sqlite:///./database/qshield.db
+      - SECRET_KEY=qshield-production-super-secret-key-change-in-prod-2026
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - MEDIA_ROOT=./uploads
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_db:/app/database
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: qshield-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  backend_uploads:
+    driver: local
+  backend_db:
+    driver: local

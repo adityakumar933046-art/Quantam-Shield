@@ -1,0 +1,20 @@
+{
+  "_notice": "DEMO / PROTOTYPE TEST DATA - NO REAL SECRETS",
+  "transaction_id": "TXN-2026-981042",
+  "system": "Q-SHIELD-DEFENSE-GATEWAY",
+  "timestamp": "2026-09-06T09:00:00Z",
+  "sender": {
+    "organization": "National Cyber Defense Command",
+    "unit_id": "SEC-OPS-01"
+  },
+  "recipient": {
+    "organization": "Allied Defense Infrastructure",
+    "endpoint": "gateway.secure.local"
+  },
+  "action": "AUTHORIZE_TELEPORTATION_KEY_DISTRIBUTION",
+  "parameters": {
+    "session_entropy_bits": 256,
+    "qubit_channels": 4,
+    "acceptance_threshold": 0.95
+  }
+}

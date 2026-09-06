@@ -1,0 +1,21 @@
+[DEMO / PROTOTYPE TEST DOCUMENT]
+==================================================================
+PROJECT Q-SHIELD: SMART DEFENSE PROCUREMENT AGREEMENT
+==================================================================
+Reference: QSHIELD-AGR-2026-0049
+Classification: UNCLASSIFIED (SIH DEMO DATA)
+Date: 2026-09-06
+Author: Procurement Division Alpha
+
+1. SCOPE OF SERVICES
+The Vendor agrees to supply verified post-quantum cryptographic hardware
+security modules (HSMs) adhering strictly to NIST FIPS 203/204 draft standards.
+
+2. COMPENSATION & TERMS
+The agreed procurement consideration is USD 1,500,000 payable upon successful
+cryptographic acceptance testing and delivery verification.
+
+3. GOVERNING LAW & JURISDICTION
+This agreement is executed under the laws of the demonstration test harness.
+
+[END OF DEMO DOCUMENT]
