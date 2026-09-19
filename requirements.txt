@@ -13,3 +13,6 @@ numpy>=1.24.0
 psycopg2-binary>=2.9.9
 pyhanko>=0.20.0
 pyhanko-certvalidator>=0.24.0
+pypdf>=4.0.0
+requests>=2.31.0
+asn1crypto>=1.5.1
