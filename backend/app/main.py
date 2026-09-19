@@ -25,8 +25,8 @@ else:
         "http://127.0.0.1:3000"
     ]
 
-# Vercel preview environments support regex (e.g. https://<project-name>-<hash>.vercel.app)
-cors_regex = os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
+# Vercel production and preview environments regex support
+cors_regex = os.getenv("CORS_ORIGIN_REGEX", r"https?://.*")
 
 app.add_middleware(
     CORSMiddleware,

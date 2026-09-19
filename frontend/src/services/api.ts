@@ -6,7 +6,12 @@ import axios from 'axios';
 const rawBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').trim();
 
 const getApiBaseUrl = (url?: string): string => {
-  if (!url) return '/api';
+  if (!url || url === '/api') {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return 'https://qshield-backend-at7o.onrender.com/api';
+    }
+    return '/api';
+  }
   const clean = url.replace(/\/+$/, '');
   return clean.endsWith('/api') ? clean : `${clean}/api`;
 };
