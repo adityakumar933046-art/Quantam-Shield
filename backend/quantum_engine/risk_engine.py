@@ -30,11 +30,13 @@ def calculate_composite_risk_score(
     state_disturbance: float,
     combined_pauli_disturbance: float,
     forgery_risk_percentage: float,
-    weights: Optional[Dict[str, float]] = None
+    weights: Optional[Dict[str, float]] = None,
+    qds_evidence: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     Calculates a deterministic 0-100 composite risk score and risk level.
     Provides an itemized breakdown of contributing factors.
+    Supports additive QDS threat evidence integration without breaking existing calls.
     """
     w = weights or DEFAULT_RISK_WEIGHTS
     total_w = sum(w.values())
@@ -69,6 +71,28 @@ def calculate_composite_risk_score(
     c_forgery = (w.get("forgery_estimate_risk", 0.05) * r_forgery) / total_w
 
     raw_score = (c_sig + c_integ + c_pk + c_cert + c_replay + c_act + c_state + c_pauli + c_forgery)
+
+    # QDS evidence additive integration
+    c_qds = 0.0
+    if qds_evidence is not None:
+        mismatch_rate = float(qds_evidence.get("mismatch_rate", 0.0))
+        t_ver = float(qds_evidence.get("verification_threshold", 0.10))
+        dist = float(qds_evidence.get("state_disturbance", 0.0))
+        t_dist = float(qds_evidence.get("channel_disturbance_threshold", 0.20))
+
+        if mismatch_rate > t_ver:
+            # Scale QDS risk contribution
+            severity_factor = min(1.0, (mismatch_rate - t_ver) / max(0.01, 1.0 - t_ver))
+            c_qds += 20.0 * severity_factor
+            if mismatch_rate >= 0.40:
+                raw_score = max(raw_score, 85.0)
+
+        if dist >= t_dist:
+            c_qds += 10.0 * min(1.0, dist / 0.50)
+            if dist >= 0.50:
+                raw_score = max(raw_score, 80.0)
+
+        raw_score += c_qds
 
     # Critical security overrides:
     # Severe hash mismatch or invalid signature guarantees minimum high risk
@@ -107,6 +131,8 @@ def calculate_composite_risk_score(
         contributions.append(f"Certificate Time/Trust Issue: +{c_cert:.1f}")
     if c_act >= 3.0:
         contributions.append(f"Unauthorized Access Log: +{c_act:.1f}")
+    if c_qds >= 3.0:
+        contributions.append(f"QDS Protocol Threat/Mismatch: +{c_qds:.1f}")
 
     if not contributions:
         contributions.append("All security indicators intact; baseline nominal risk.")

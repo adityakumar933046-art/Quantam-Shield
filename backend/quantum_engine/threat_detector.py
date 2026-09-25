@@ -15,7 +15,7 @@ Implements deterministic, rule-based threat evaluation across 8 categories:
 Contains NO AI, NO ML, NO random production security decisions.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Sequence, Union
 import numpy as np
 
 from quantum_engine.bell_states import (
@@ -32,7 +32,13 @@ from quantum_engine.pauli_operations import (
     apply_z,
     calculate_state_change
 )
-from quantum_engine.states import STATE_0, STATE_1, normalize_state
+from quantum_engine.states import STATE_0, STATE_1, normalize_state, state_fidelity
+from quantum_engine.metrics import calculate_deviation, calculate_state_disturbance
+from quantum_engine.thresholds import (
+    QDS_VERIFICATION_THRESHOLD,
+    QDS_REPUDIATION_THRESHOLD,
+    QDS_CHANNEL_DISTURBANCE_THRESHOLD
+)
 
 
 def evaluate_deterministic_threats(
@@ -41,7 +47,8 @@ def evaluate_deterministic_threats(
     pauli_disturbances: Optional[Dict[str, float]] = None,
     forgery_risk: Optional[Dict[str, Any]] = None,
     metadata_details: Optional[Dict[str, Any]] = None,
-    audit_events: Optional[List[str]] = None
+    audit_events: Optional[List[str]] = None,
+    qds_evidence: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Any]]:
     """
     Evaluates rule-based threat categories from verified cryptographic data,
@@ -217,6 +224,26 @@ def evaluate_deterministic_threats(
             }
         })
 
+    # -------------------------------------------------------------------------
+    # 8. QDS PROTOCOL THREAT INTEGRATION (If QDS Evidence Provided)
+    # -------------------------------------------------------------------------
+    if qds_evidence is not None:
+        qds_eval = evaluate_qds_threats(qds_evidence, replay_safe=replay_safe, act_safe=act_safe)
+        if qds_eval["threat_detected"]:
+            cat = qds_eval["threat_type"]
+            # Avoid duplicate category if already flagged by classical rules
+            if not any(t.get("threat_category") == cat for t in threats):
+                threats.append({
+                    "threat_category": cat,
+                    "threat_type": cat,
+                    "severity": qds_eval["severity"],
+                    "threat_score": 90.0 if qds_eval["severity"] == "CRITICAL" else 75.0,
+                    "confidence": 0.95,
+                    "threat_status": "OPEN",
+                    "description": qds_eval["explanation"],
+                    "evidence": qds_eval["confidence_evidence"]
+                })
+
     return threats
 
 
@@ -308,3 +335,260 @@ def simulate_quantum_channel(
         "explanation": explanation,
         "scientific_disclaimer": "This is a theoretical software mathematical simulation of a quantum channel; no real quantum hardware was used."
     }
+
+
+# ==============================================================================
+# 9. QDS THREAT EVIDENCE & STATISTICAL CLASSIFICATION
+# ==============================================================================
+
+def build_qds_threat_evidence(
+    teleportation_average_fidelity: float,
+    mismatch_rate: float,
+    measurement_accuracy: float,
+    distribution_distance: float,
+    chi_square_statistic: Optional[float] = None,
+    intercept_resend_indicator: bool = False,
+    pauli_error_indicator: bool = False,
+    non_repudiation_result: Optional[Dict[str, Any]] = None,
+    verification_threshold: float = QDS_VERIFICATION_THRESHOLD,
+    repudiation_threshold: float = QDS_REPUDIATION_THRESHOLD,
+    channel_disturbance_threshold: float = QDS_CHANNEL_DISTURBANCE_THRESHOLD
+) -> Dict[str, Any]:
+    """
+    Constructs a structured QDS threat evidence object (Part 6).
+
+    Integrates teleportation fidelity, projective measurement mismatch rates,
+    distribution divergence, chi-square goodness-of-fit, and attack indicators
+    into a standardized evidence payload for deterministic threat evaluation.
+    """
+    disturbance = max(0.0, min(1.0, 1.0 - float(teleportation_average_fidelity)))
+    return {
+        "teleportation_average_fidelity": round(float(teleportation_average_fidelity), 6),
+        "state_disturbance": round(float(disturbance), 6),
+        "mismatch_rate": round(float(mismatch_rate), 6),
+        "measurement_accuracy": round(float(measurement_accuracy), 6),
+        "distribution_distance": round(float(distribution_distance), 6),
+        "chi_square_statistic": round(float(chi_square_statistic), 6) if chi_square_statistic is not None else None,
+        "intercept_resend_indicator": bool(intercept_resend_indicator),
+        "pauli_error_indicator": bool(pauli_error_indicator),
+        "non_repudiation_result": non_repudiation_result,
+        "verification_threshold": float(verification_threshold),
+        "repudiation_threshold": float(repudiation_threshold),
+        "channel_disturbance_threshold": float(channel_disturbance_threshold),
+    }
+
+
+def evaluate_qds_threats(
+    qds_evidence: Dict[str, Any],
+    replay_safe: float = 1.0,
+    act_safe: float = 1.0
+) -> Dict[str, Any]:
+    """
+    Evaluates threat classification from QDS statistical evidence and indicators (Part 7, Part 11).
+
+    Classification Logic:
+    1. Signature verification rejected (mismatch_rate > verification_threshold)
+       -> DIGITAL_SIGNATURE_FORGERY
+    2. Significant intercept-resend disturbance or intercept_resend_indicator
+       -> QUANTUM_CHANNEL_MANIPULATION
+    3. Significant Pauli channel disturbance or pauli_error_indicator
+       -> QUANTUM_CHANNEL_MANIPULATION
+    4. Non-repudiation disagreement (cross-verifier mismatch > repudiation_threshold)
+       -> DIGITAL_SIGNATURE_FORGERY
+    5. Replay evidence (replay_safe < 0.3)
+       -> REPLAY_ATTACK
+    6. Unauthorized verification (act_safe < 0.5)
+       -> UNAUTHORIZED_VERIFICATION
+
+    IMPORTANT:
+    Does NOT classify an attack merely because fidelity is slightly below 1.0.
+    Small numerical/statistical deviations are expected and allowed up to explicit thresholds.
+    """
+    mismatch_rate = float(qds_evidence.get("mismatch_rate", 0.0))
+    fidelity = float(qds_evidence.get("teleportation_average_fidelity", 1.0))
+    disturbance = float(qds_evidence.get("state_disturbance", max(0.0, 1.0 - fidelity)))
+    dist_distance = float(qds_evidence.get("distribution_distance", 0.0))
+    chi_sq = qds_evidence.get("chi_square_statistic")
+    intercept_resend = bool(qds_evidence.get("intercept_resend_indicator", False))
+    pauli_error = bool(qds_evidence.get("pauli_error_indicator", False))
+    non_rep = qds_evidence.get("non_repudiation_result")
+
+    t_ver = float(qds_evidence.get("verification_threshold", QDS_VERIFICATION_THRESHOLD))
+    t_rep = float(qds_evidence.get("repudiation_threshold", QDS_REPUDIATION_THRESHOLD))
+    t_dist = float(qds_evidence.get("channel_disturbance_threshold", QDS_CHANNEL_DISTURBANCE_THRESHOLD))
+
+    threat_detected = False
+    threat_type = "NONE"
+    severity = "LOW"
+    explanation_parts = []
+
+    # 1. Verification Mismatch / Forgery
+    if mismatch_rate > t_ver:
+        threat_detected = True
+        threat_type = "DIGITAL_SIGNATURE_FORGERY"
+        severity = "CRITICAL" if mismatch_rate >= 0.40 else "HIGH"
+        explanation_parts.append(
+            f"QDS signature verification rejected: measurement mismatch rate epsilon={mismatch_rate:.4f} "
+            f"exceeds security threshold T_VER={t_ver:.2f}."
+        )
+
+    # 2. Intercept-Resend / Channel Manipulation
+    if intercept_resend or disturbance >= t_dist:
+        threat_detected = True
+        threat_type = "QUANTUM_CHANNEL_MANIPULATION"
+        severity = "CRITICAL" if disturbance >= 0.50 else "HIGH"
+        explanation_parts.append(
+            f"Detected anomaly consistent with quantum channel manipulation: "
+            f"channel disturbance D={disturbance:.4f} exceeds threshold T_DIST={t_dist:.2f}."
+        )
+
+    # 3. Pauli Channel Disturbance
+    if pauli_error and disturbance >= t_dist:
+        threat_detected = True
+        threat_type = "QUANTUM_CHANNEL_MANIPULATION"
+        severity = "HIGH"
+        explanation_parts.append(
+            f"Pauli channel disturbance detected: D={disturbance:.4f}."
+        )
+
+    # 4. Non-Repudiation Discrepancy
+    if non_rep is not None:
+        rep_mismatch = float(non_rep.get("mismatch_rate", 0.0))
+        consistent = bool(non_rep.get("consistent", rep_mismatch <= t_rep))
+        if not consistent or rep_mismatch > t_rep:
+            threat_detected = True
+            threat_type = "DIGITAL_SIGNATURE_FORGERY"
+            severity = "HIGH"
+            explanation_parts.append(
+                f"Non-repudiation failure: cross-receiver mismatch rate {rep_mismatch:.4f} "
+                f"exceeds threshold T_REP={t_rep:.2f}."
+            )
+
+    # 5. Replay Evidence
+    if replay_safe < 0.3:
+        threat_detected = True
+        threat_type = "REPLAY_ATTACK"
+        severity = "HIGH"
+        explanation_parts.append(
+            f"Replay attack pattern detected: replay safety index {replay_safe:.2f} < 0.30."
+        )
+
+    # 6. Unauthorized Verification
+    if act_safe < 0.5:
+        threat_detected = True
+        threat_type = "UNAUTHORIZED_VERIFICATION"
+        severity = "HIGH"
+        explanation_parts.append(
+            f"Unauthorized verification access attempt detected in audit log."
+        )
+
+    if not threat_detected:
+        explanation = (
+            f"QDS verification authentic: mismatch rate epsilon={mismatch_rate:.4f} <= {t_ver:.2f}, "
+            f"channel fidelity F={fidelity:.4f} (disturbance D={disturbance:.4f} < {t_dist:.2f}). "
+            "No quantum channel manipulation or forgery detected."
+        )
+    else:
+        explanation = " | ".join(explanation_parts)
+
+    return {
+        "threat_detected": threat_detected,
+        "threat_type": threat_type,
+        "severity": severity if threat_detected else "LOW",
+        "confidence_evidence": {
+            "mismatch_rate": mismatch_rate,
+            "fidelity": fidelity,
+            "disturbance": disturbance,
+            "distribution_distance": dist_distance,
+            "chi_square": chi_sq
+        },
+        "thresholds": {
+            "verification": t_ver,
+            "repudiation": t_rep,
+            "channel_disturbance": t_dist
+        },
+        "explanation": explanation
+    }
+
+
+def analyze_quantum_channel_attack(
+    baseline_states: Sequence[Any],
+    attacked_states: Sequence[Any],
+    expected_states: Optional[Sequence[Any]] = None,
+    attack_type: str = "unknown",
+    threshold: float = QDS_CHANNEL_DISTURBANCE_THRESHOLD
+) -> Dict[str, Any]:
+    """
+    Integrates quantum channel attacks (bit flip, phase flip, intercept-resend)
+    with statistical and metric analysis (Part 9).
+
+    Calculates:
+    - baseline fidelity
+    - attacked fidelity
+    - disturbance (1 - attacked_fidelity)
+    - mismatch rate
+    - measurement distribution
+    - distribution distance (TVD)
+    - threat classification
+
+    Uses scientifically disciplined terminology ('detected anomaly', 'threshold exceeded',
+    'consistent with channel manipulation').
+    """
+    if len(baseline_states) == 0 or len(attacked_states) == 0:
+        raise ValueError("State sequences cannot be empty.")
+    if len(baseline_states) != len(attacked_states):
+        raise ValueError("Baseline and attacked states length mismatch.")
+
+    n = len(baseline_states)
+    ref_states = expected_states if expected_states is not None else baseline_states
+
+    base_fids = [state_fidelity(ref_states[i], baseline_states[i]) for i in range(n)]
+    attack_fids = [state_fidelity(ref_states[i], attacked_states[i]) for i in range(n)]
+
+    base_fid_avg = float(np.mean(base_fids))
+    attack_fid_avg = float(np.mean(attack_fids))
+    disturbance = max(0.0, min(1.0, 1.0 - attack_fid_avg))
+
+    # Mismatches (projective measurement mismatch, F < 0.85)
+    mismatches = sum(1 for f in attack_fids if f < 0.85)
+    mismatch_rate = mismatches / n
+
+    # Binary measurement outcome representation: 1 for match (fidelity >= 0.85), 0 for mismatch
+    obs_matches = [1 if f >= 0.85 else 0 for f in attack_fids]
+    exp_matches = [1 if f >= 0.85 else 0 for f in base_fids]
+
+    p_obs_1 = sum(obs_matches) / n
+    p_obs_0 = 1.0 - p_obs_1
+    p_exp_1 = sum(exp_matches) / n
+    p_exp_0 = 1.0 - p_exp_1
+
+    obs_dist = [round(p_obs_0, 6), round(p_obs_1, 6)]
+    exp_dist = [round(p_exp_0, 6), round(p_exp_1, 6)]
+    dist_distance = calculate_deviation(exp_dist, obs_dist)
+
+    threat_exceeded = disturbance >= threshold
+    threat_classification = "QUANTUM_CHANNEL_MANIPULATION" if threat_exceeded else "NONE"
+
+    status_desc = "threshold exceeded; detected anomaly consistent with channel manipulation" if threat_exceeded else "within acceptable channel threshold"
+
+    explanation = (
+        f"Quantum Channel Analysis ({attack_type}): baseline fidelity={base_fid_avg:.4f}, "
+        f"attacked fidelity={attack_fid_avg:.4f}, disturbance D={disturbance:.4f} ({status_desc}). "
+        f"Mismatch rate epsilon={mismatch_rate:.4f}, distribution distance TVD={dist_distance:.4f}."
+    )
+
+    return {
+        "attack_type": attack_type,
+        "baseline_fidelity": round(base_fid_avg, 6),
+        "attacked_fidelity": round(attack_fid_avg, 6),
+        "disturbance": round(disturbance, 6),
+        "mismatch_rate": round(mismatch_rate, 6),
+        "observed_distribution": obs_dist,
+        "expected_distribution": exp_dist,
+        "distribution_distance": round(dist_distance, 6),
+        "threat_classification": threat_classification,
+        "threshold_exceeded": threat_exceeded,
+        "threshold": threshold,
+        "explanation": explanation
+    }
+

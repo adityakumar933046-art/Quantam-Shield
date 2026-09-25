@@ -62,24 +62,71 @@ from quantum_engine.security_state import (
     DEFAULT_SECURITY_WEIGHTS,
 )
 
+from quantum_engine.thresholds import (
+    QDS_VERIFICATION_THRESHOLD,
+    QDS_REPUDIATION_THRESHOLD,
+    QDS_CHANNEL_DISTURBANCE_THRESHOLD,
+    QDS_MIN_ACCEPTABLE_FIDELITY,
+    CHI_SQUARE_MIN_SAMPLE_SIZE,
+    CHI_SQUARE_MIN_EXPECTED_COUNT,
+    QDS_DISTRIBUTION_DISTANCE_ANOMALY_THRESHOLD,
+    get_qds_thresholds,
+)
+
 from quantum_engine.measurement_analysis import (
     analyze_projective_measurements,
     simulate_stochastic_measurements,
+    calculate_chi_square,
+    calculate_total_variation_distance,
+    analyze_qds_measurements,
 )
 
 from quantum_engine.forgery_probability import (
     calculate_forgery_probability_estimate,
+    calculate_qds_forgery_probability_estimate,
     DEFAULT_FORGERY_WEIGHTS,
 )
 
 from quantum_engine.threat_detector import (
     evaluate_deterministic_threats,
     simulate_quantum_channel,
+    build_qds_threat_evidence,
+    evaluate_qds_threats,
+    analyze_quantum_channel_attack,
 )
 
 from quantum_engine.risk_engine import (
     calculate_composite_risk_score,
     DEFAULT_RISK_WEIGHTS,
+)
+
+from quantum_engine.qds_protocol import (
+    QDSKeyPair,
+    QDSSignature,
+    TeleportationResult,
+    QDSVerificationResult,
+    validate_qubit_state,
+    state_to_tuple,
+    generate_random_state_from_allowed_set,
+    generate_qds_key_pair,
+    hex_to_bit_sequence,
+    sign_hash_qds,
+    create_bell_pairs,
+    teleport_qubit,
+    teleport_signature,
+    verify_signature_qds,
+    forge_qds_signature,
+    verify_non_repudiation_qds,
+    ALLOWED_QDS_STATES,
+    PROTOCOL_VERSION,
+    DEFAULT_T_VER,
+)
+
+from quantum_engine.qds_attack_pipeline import (
+    run_qds_attack_simulation,
+    run_all_qds_attack_scenarios,
+    QDSAttackSimulationResult,
+    SUPPORTED_QDS_ATTACKS,
 )
 
 __all__ = [
@@ -132,14 +179,55 @@ __all__ = [
     # Measurement Analysis
     "analyze_projective_measurements",
     "simulate_stochastic_measurements",
+    "calculate_chi_square",
+    "calculate_total_variation_distance",
+    "analyze_qds_measurements",
     # Forgery Probability
     "calculate_forgery_probability_estimate",
+    "calculate_qds_forgery_probability_estimate",
     "DEFAULT_FORGERY_WEIGHTS",
     # Threat Detector
     "evaluate_deterministic_threats",
     "simulate_quantum_channel",
+    "build_qds_threat_evidence",
+    "evaluate_qds_threats",
+    "analyze_quantum_channel_attack",
     # Risk Engine
     "calculate_composite_risk_score",
     "DEFAULT_RISK_WEIGHTS",
+    # Thresholds
+    "QDS_VERIFICATION_THRESHOLD",
+    "QDS_REPUDIATION_THRESHOLD",
+    "QDS_CHANNEL_DISTURBANCE_THRESHOLD",
+    "QDS_MIN_ACCEPTABLE_FIDELITY",
+    "CHI_SQUARE_MIN_SAMPLE_SIZE",
+    "CHI_SQUARE_MIN_EXPECTED_COUNT",
+    "QDS_DISTRIBUTION_DISTANCE_ANOMALY_THRESHOLD",
+    "get_qds_thresholds",
+    # QDS Protocol Core
+    "QDSKeyPair",
+    "QDSSignature",
+    "TeleportationResult",
+    "QDSVerificationResult",
+    "validate_qubit_state",
+    "state_to_tuple",
+    "generate_random_state_from_allowed_set",
+    "generate_qds_key_pair",
+    "hex_to_bit_sequence",
+    "sign_hash_qds",
+    "create_bell_pairs",
+    "teleport_qubit",
+    "teleport_signature",
+    "verify_signature_qds",
+    "forge_qds_signature",
+    "verify_non_repudiation_qds",
+    "ALLOWED_QDS_STATES",
+    "PROTOCOL_VERSION",
+    "DEFAULT_T_VER",
+    # QDS Attack Pipeline
+    "run_qds_attack_simulation",
+    "run_all_qds_attack_scenarios",
+    "QDSAttackSimulationResult",
+    "SUPPORTED_QDS_ATTACKS",
 ]
 

@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator, Field
 
 # Authentication Schemas
 class LoginRequest(BaseModel):
@@ -490,6 +490,105 @@ class QDSPerformanceMetricsResponse(BaseModel):
     false_rejection_rate: float
     time_complexity_explanation: str
     space_complexity_explanation: str
+
+
+# Multi-Qubit QDS REST API Schemas (Prompt 5)
+class QDSKeyGenerationRequest(BaseModel):
+    key_length: int = Field(default=8, ge=1, le=512, description="Number of qubits in QDS key (safe max 512)")
+    seed: Optional[int] = Field(default=None, description="Optional integer seed for deterministic key generation")
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class QDSKeyGenerationResponse(BaseModel):
+    key_id: str
+    key_length: int
+    protocol_version: str
+    public_key: List[Any]
+    basis_information: List[str]
+    seed: Optional[int] = None
+
+
+class QDSSignRequest(BaseModel):
+    key_id: str = Field(..., description="Active QDS key identifier")
+    message_hash: str = Field(..., min_length=1, max_length=128, description="Hexadecimal hash digest of message")
+    seed: Optional[int] = Field(default=None, description="Optional seed for reproducible signature state selection")
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class QDSSignResponse(BaseModel):
+    signature_id: str
+    message_hash: str
+    qubit_count: int
+    protocol_version: str
+
+
+class QDSTeleportRequest(BaseModel):
+    signature_id: str = Field(..., description="Active QDS signature identifier")
+    seed: Optional[int] = Field(default=None, description="Optional seed for teleportation Bell measurement choices")
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class QDSTeleportResponse(BaseModel):
+    signature_id: str
+    qubit_count: int
+    average_fidelity: float
+    fidelities: List[float]
+    measurement_bits: List[str]
+    pauli_corrections: List[str]
+    success: bool
+
+
+class QDSVerifyRequest(BaseModel):
+    signature_id: str = Field(..., description="Active QDS signature identifier")
+    threshold: float = Field(default=0.10, ge=0.0, le=1.0, description="Verification mismatch threshold (default 0.10)")
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class QDSVerifyResponse(BaseModel):
+    verification: Dict[str, Any]
+    statistics: Dict[str, Any]
+    threat: Dict[str, Any]
+    risk: Dict[str, Any]
+
+
+class QDSMultiQubitAttackSimulationRequest(BaseModel):
+    message_hash: str = Field(..., min_length=1, max_length=128, description="Hexadecimal hash digest")
+    attack_type: str = Field(default="bit_flip", description="Attack type (none, random_state_substitution, bit_flip, phase_flip, intercept_resend)")
+    key_length: int = Field(default=8, ge=1, le=512, description="Key length in qubits")
+    seed: Optional[int] = Field(default=None, description="Optional seed for deterministic simulation")
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class QDSAttackScenarioRequest(BaseModel):
+    message_hash: str = Field(default="a1b2c3d4", min_length=1, max_length=128, description="Hexadecimal hash digest")
+    key_length: int = Field(default=8, ge=1, le=512, description="Key length in qubits")
+    seed: Optional[int] = Field(default=None, description="Optional seed for deterministic simulation")
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class QDSThresholdsResponse(BaseModel):
+    verification_threshold: float
+    repudiation_threshold: float
+    channel_disturbance_threshold: float
+    minimum_acceptable_fidelity: float
+    distribution_distance_anomaly_threshold: float
+    chi_square_min_sample_size: int
+    chi_square_min_expected_count: float
+
+
+class QDSHealthResponse(BaseModel):
+    status: str
+    protocol: str
+    quantum_engine: str
+    statistical_analysis: str
+    attack_pipeline: str
+    ai_ml: bool
 
 
 # Canonical Step 4 Schemas
